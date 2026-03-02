@@ -272,7 +272,7 @@ export default function HomePage() {
                   {/* Price */}
                   <div className="pt-4 border-t border-stone-200 flex justify-between items-center">
                     <div>
-                      <p className="text-xs text-stone-400">per gram</p>
+                      <p className="text-xs text-stone-400">price</p>
                       <p className="text-2xl font-bold text-stone-900">
                         {product.pricing?.[0]?.price?.toLocaleString()} MMK
                       </p>
