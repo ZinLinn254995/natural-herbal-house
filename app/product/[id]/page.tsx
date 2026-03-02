@@ -20,6 +20,16 @@ export default function ProductDetail() {
   const [simComment, setSimComment] = useState("");
   const [isChecking, setIsChecking] = useState(false);
 
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const reviewsPerPage = 5;
+
+  // လက်ရှိ page အတွက် review များကို တွက်ချက်ခြင်း
+  const indexOfLastReview = currentPage * reviewsPerPage;
+  const indexOfFirstReview = indexOfLastReview - reviewsPerPage;
+  const currentReviews = reviews.slice(indexOfFirstReview, indexOfLastReview);
+  const totalPages = Math.ceil(reviews.length / reviewsPerPage);
+
   useEffect(() => {
     async function fetchProductData() {
       setLoading(true);
@@ -50,30 +60,30 @@ export default function ProductDetail() {
 
   // --- Helpful Counter Logic (Fixed for Database Sync) ---
   async function handleHelpfulClick(reviewId: any) {
-  // ၁။ UI မှာ ချက်ချင်းတိုးပြမယ် (Optimistic Update)
-  setReviews(prev => prev.map(rev => 
-    rev.id === reviewId ? { ...rev, helpful_count: (rev.helpful_count || 0) + 1 } : rev
-  ));
-
-  // ၂။ Simulation review (fake-id) ဖြစ်နေရင် database update ကို ကျော်မယ်
-  if (typeof reviewId === 'string' && reviewId.startsWith("fake-")) {
-    return;
-  }
-
-  // ၃။ Database update
-  const { error } = await supabase.rpc('increment_helpful_count', { 
-    review_id_input: Number(reviewId) 
-  });
-  
-  if (error) {
-    console.error("Database Error:", error);
-    // Error တက်ရင် UI ကို မူလအတိုင်း ပြန်နှုတ်မယ်
-    setReviews(prev => prev.map(rev => 
-      rev.id === reviewId ? { ...rev, helpful_count: Math.max(0, (rev.helpful_count || 0) - 1) } : rev
+    // ၁။ UI မှာ ချက်ချင်းတိုးပြမယ် (Optimistic Update)
+    setReviews(prev => prev.map(rev =>
+      rev.id === reviewId ? { ...rev, helpful_count: (rev.helpful_count || 0) + 1 } : rev
     ));
-    alert("Helpful count update လုပ်လို့မရပါဘူး။");
+
+    // ၂။ Simulation review (fake-id) ဖြစ်နေရင် database update ကို ကျော်မယ်
+    if (typeof reviewId === 'string' && reviewId.startsWith("fake-")) {
+      return;
+    }
+
+    // ၃။ Database update
+    const { error } = await supabase.rpc('increment_helpful_count', {
+      review_id_input: Number(reviewId)
+    });
+
+    if (error) {
+      console.error("Database Error:", error);
+      // Error တက်ရင် UI ကို မူလအတိုင်း ပြန်နှုတ်မယ်
+      setReviews(prev => prev.map(rev =>
+        rev.id === reviewId ? { ...rev, helpful_count: Math.max(0, (rev.helpful_count || 0) - 1) } : rev
+      ));
+      alert("Helpful count update လုပ်လို့မရပါဘူး။");
+    }
   }
-}
 
   // --- Simulation Submit Logic ---
   async function handleSimSubmit(e: React.FormEvent) {
@@ -94,14 +104,14 @@ export default function ProductDetail() {
 
       setReviews(prev => [fakeNewReview, ...prev]);
       setIsChecking(false);
-      setSimOrderId(""); 
-      setSimComment(""); 
+      setSimOrderId("");
+      setSimComment("");
       setSimRating(5);
       alert(`Order ID #${simOrderId} ကို စစ်ဆေးပြီးပါပြီ။`);
     }, 2000);
   }
 
-  const averageRating = reviews.length > 0 
+  const averageRating = reviews.length > 0
     ? (reviews.reduce((acc, rev) => acc + rev.rating, 0) / reviews.length).toFixed(1)
     : 0;
 
@@ -117,7 +127,7 @@ export default function ProductDetail() {
     <main className="max-w-7xl mx-auto px-6 py-12 min-h-screen">
       <Link href="/" className="inline-flex items-center gap-2 text-stone-400 font-bold text-sm mb-12 hover:text-green-800 transition-colors group">
         <div className="p-2 rounded-full border border-stone-100 group-hover:border-green-800">
-          <ChevronLeft size={18}/>
+          <ChevronLeft size={18} />
         </div>
         BACK TO COLLECTION
       </Link>
@@ -128,7 +138,7 @@ export default function ProductDetail() {
           <div className="rounded-[3rem] overflow-hidden bg-stone-50 border border-stone-100 shadow-2xl aspect-[4/5]">
             <img src={activeImage} className="w-full h-full object-cover transition-all duration-500" alt={product.strain_name} />
           </div>
-          
+
           {product.media_urls && product.media_urls.length > 1 && (
             <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
               {product.media_urls.map((url: string, i: number) => (
@@ -147,11 +157,21 @@ export default function ProductDetail() {
               <span className="text-green-800 font-black text-[10px] uppercase tracking-widest bg-green-50 px-4 py-2 rounded-full">
                 {product.product_info || "Natural Herbal"}
               </span>
-              
+
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${product.is_in_stock
+                ? 'bg-green-50 border-green-100 text-green-700'
+                : 'bg-red-50 border-red-100 text-red-600'
+                }`}>
+                <div className={`w-2 h-2 rounded-full ${product.is_in_stock ? 'bg-green-600 animate-pulse' : 'bg-red-600'}`}></div>
+                <span className="text-[11px] font-black uppercase tracking-widest">
+                  {product.is_in_stock ? 'In Stock' : 'Out of Stock'}
+                </span>
+              </div>
+
               {product.sold_count > 0 && (
                 <div className="flex items-center gap-1.5 bg-orange-50 text-orange-700 px-3 py-2 rounded-full border border-orange-100">
-                   <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></div>
-                   <span className="text-[10px] font-black uppercase tracking-widest">{product.sold_count}g Sold</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></div>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{product.sold_count}g Sold</span>
                 </div>
               )}
             </div>
@@ -161,66 +181,65 @@ export default function ProductDetail() {
             </h1>
 
             <div className="flex items-center gap-2">
-               <div className="flex text-yellow-500">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={14} fill={i < Math.round(Number(averageRating)) ? "currentColor" : "none"} className={i < Math.round(Number(averageRating)) ? "" : "text-stone-200"} />
-                  ))}
-               </div>
-               <span className="text-xs font-black text-stone-400 uppercase tracking-widest">
-                  {averageRating} ({reviews.length} Verified Reviews)
-               </span>
+              <div className="flex text-yellow-500">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={14} fill={i < Math.round(Number(averageRating)) ? "currentColor" : "none"} className={i < Math.round(Number(averageRating)) ? "" : "text-stone-200"} />
+                ))}
+              </div>
+              <span className="text-xs font-black text-stone-400 uppercase tracking-widest">
+                {averageRating} ({reviews.length} Verified Reviews)
+              </span>
             </div>
           </div>
 
           <div className="bg-stone-50 rounded-[2.5rem] p-8 border border-stone-100 grid grid-cols-2 gap-8">
-  
-  {/* THC */}
-  <div className="space-y-1">
-    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-      THC Content
-    </p>
-    <p className="text-4xl font-black text-stone-900">
-      {product.thc_percent}%
-    </p>
-  </div>
 
-  {/* CBD */}
-  <div className="space-y-1">
-    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-      CBD Content
-    </p>
-    <p className="text-4xl font-black text-stone-900">
-      {product.cbd_percent}%
-    </p>
-  </div>
+            {/* THC */}
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                THC Content
+              </p>
+              <p className="text-4xl font-black text-stone-900">
+                {product.thc_percent}%
+              </p>
+            </div>
 
-  {/* Sativa / Indica */}
-  <div className="col-span-2 pt-4 border-t border-stone-200">
-    
-    {/* Text */}
-    <div className="flex justify-between text-[11px] font-bold uppercase mb-3">
-      <span className="text-green-800">
-        Sativa {product.sativa_percent}%
-      </span>
-      <span className="text-orange-500">
-        Indica {product.indica_percent}%
-      </span>
-    </div>
+            {/* CBD */}
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                CBD Content
+              </p>
+              <p className="text-4xl font-black text-stone-900">
+                {product.cbd_percent}%
+              </p>
+            </div>
 
-    {/* Dual Progress Bar */}
-    <div className="h-2 w-full bg-stone-200 rounded-full overflow-hidden flex">
-      <div
-        className="h-full bg-green-800 transition-all duration-700"
-        style={{ width: `${product.sativa_percent}%` }}
-      />
-      <div
-        className="h-full bg-orange-500 transition-all duration-700"
-        style={{ width: `${product.indica_percent}%` }}
-      />
-    </div>
+            {/* Sativa / Indica */}
+            <div className="col-span-2 pt-4 border-t border-stone-200">
 
-  </div>
-</div>
+              {/* Text */}
+              <div className="flex justify-between text-[11px] font-bold uppercase mb-3">
+                <span className="text-green-800">
+                  Sativa {product.sativa_percent}%
+                </span>
+                <span className="text-orange-500">
+                  Indica {product.indica_percent}%
+                </span>
+              </div>
+
+              {/* Dual Progress Bar */}
+              <div className="h-2 w-full bg-stone-200 rounded-full overflow-hidden flex">
+                <div
+                  className="h-full bg-green-800 transition-all duration-700"
+                  style={{ width: `${product.sativa_percent}%` }}
+                />
+                <div
+                  className="h-full bg-orange-500 transition-all duration-700"
+                  style={{ width: `${product.indica_percent}%` }}
+                />
+              </div>
+            </div>
+          </div>
 
           <div className="space-y-4">
             <h3 className="font-black text-stone-900 uppercase text-xs tracking-[0.2em]">Description</h3>
@@ -228,6 +247,7 @@ export default function ProductDetail() {
               {product.description || "No description available for this product."}
             </p>
           </div>
+
 
           <div className="space-y-4">
             <h3 className="font-black text-stone-900 uppercase text-xs tracking-[0.2em]">Select Quantity</h3>
@@ -241,6 +261,22 @@ export default function ProductDetail() {
             </div>
           </div>
 
+          {product.is_in_stock && (
+            <div className="text-stone-400 font-bold text-xs uppercase tracking-tight">
+              Only <span className="text-stone-900">{product.stock_amount}g</span> left in inventory
+            </div>
+          )}
+
+          <a
+            href="https://m.me/61587729868096"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-7 bg-green-800 text-white rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 cursor-pointer group relative overflow-hidden active:scale-95 transition-transform shadow-lg hover:bg-green-900"
+          >
+            <MessageSquare size={24} />
+            <span>ORDER VIA MESSENGER</span>
+          </a>
+
           {/* Customer Reviews Section */}
           <div className="space-y-8 pt-16 border-t border-stone-100">
             <div className="flex flex-col gap-1">
@@ -251,7 +287,7 @@ export default function ProductDetail() {
             </div>
 
             <div className="space-y-4">
-              {reviews.map((rev) => (
+              {currentReviews.map((rev) => (
                 <div key={rev.id} className="bg-white p-5 rounded-[2rem] border border-stone-100 shadow-sm">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 font-bold text-xs shrink-0 border border-stone-200 uppercase">
@@ -277,7 +313,7 @@ export default function ProductDetail() {
                       </div>
 
                       <p className="text-stone-700 text-[13px] leading-relaxed pt-1">{rev.comment}</p>
-                      
+
                       <div className="flex items-center gap-4 pt-3">
                         <button onClick={() => handleHelpfulClick(rev.id)} className="flex items-center gap-1.5 text-stone-400 hover:text-stone-900 transition-all active:scale-90">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${rev.helpful_count > 0 ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-stone-50 border border-stone-100'}`}>
@@ -294,6 +330,46 @@ export default function ProductDetail() {
                 </div>
               ))}
             </div>
+
+            {/* --- Pagination UI --- */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 pt-8">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-xl border border-stone-100 disabled:opacity-30 hover:bg-stone-50 transition-colors"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+
+                <div className="flex gap-2">
+                  {[...Array(totalPages)].map((_, i) => {
+                    const pageNum = i + 1;
+                    // Page နံပါတ် အများကြီးဖြစ်လာရင် ဥပမာ (1 2 3 ... 10) ပုံစံမျိုး Logic ထည့်နိုင်သည်
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${currentPage === pageNum
+                          ? 'bg-stone-900 text-white shadow-lg shadow-stone-200 scale-110'
+                          : 'bg-white border border-stone-100 text-stone-400 hover:border-stone-300'
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-xl border border-stone-100 disabled:opacity-30 hover:bg-stone-50 transition-colors rotate-180"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+              </div>
+            )}
 
             {/* Simulation Review Form Section */}
             <div className="mt-16 bg-white rounded-[2.5rem] p-8 border border-stone-100 shadow-sm relative overflow-hidden">
@@ -333,7 +409,7 @@ export default function ProductDetail() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-stone-400 uppercase ml-2 tracking-widest">Your experience</label>
                     <textarea value={simComment} onChange={(e) => setSimComment(e.target.value)} placeholder="What did you like about this strain?" className="w-full p-5 bg-stone-50 rounded-[2rem] outline-none border border-stone-50 text-sm h-32 focus:bg-white focus:ring-2 focus:ring-green-800 transition-all resize-none" />
@@ -341,7 +417,7 @@ export default function ProductDetail() {
 
                   <button disabled={isChecking} className={`w-full py-6 rounded-[1.8rem] font-black text-xs uppercase tracking-[0.3em] transition-all flex justify-center items-center gap-3 shadow-lg shadow-stone-100 ${isChecking ? 'bg-stone-100 text-stone-400' : 'bg-stone-900 text-white hover:bg-green-900 active:scale-95'}`}>
                     {isChecking ? (
-                      <><Loader2 className="animate-spin" size={16}/><span>Verifying Order ID...</span></>
+                      <><Loader2 className="animate-spin" size={16} /><span>Verifying Order ID...</span></>
                     ) : (
                       "Post Review"
                     )}
@@ -350,16 +426,6 @@ export default function ProductDetail() {
               </div>
             </div>
           </div>
-
-          <a 
-  href="https://m.me/61587729868096" 
-  target="_blank" 
-  rel="noopener noreferrer"
-  className="w-full py-7 bg-green-800 text-white rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 cursor-pointer group relative overflow-hidden active:scale-95 transition-transform shadow-lg hover:bg-green-900"
->
-  <MessageSquare size={24} /> 
-  <span>ORDER VIA MESSENGER</span>
-</a>
         </div>
       </div>
     </main>
