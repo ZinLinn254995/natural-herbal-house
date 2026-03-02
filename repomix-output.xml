@@ -1,0 +1,1418 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+app/
+  admin/
+    page.tsx
+  components/
+    Footer.tsx
+    Navbar.tsx
+  login/
+    page.tsx
+  product/
+    [id]/
+      page.tsx
+  favicon.ico
+  globals.css
+  layout.tsx
+  page.tsx
+lib/
+  supabase.ts
+public/
+  file.svg
+  globe.svg
+  next.svg
+  vercel.svg
+  window.svg
+.gitignore
+eslint.config.mjs
+next.config.ts
+package.json
+postcss.config.mjs
+proxy.ts
+README.md
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app/admin/page.tsx">
+"use client";
+
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { 
+  Plus, Trash2, Package, Loader2, LogOut, 
+  X, Database, Edit3, Star, MessageSquare
+} from "lucide-react";
+
+export default function ProfessionalAdmin() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  
+  // --- Form States ---
+  const [strainName, setStrainName] = useState("");
+  const [productInfo, setProductInfo] = useState("");
+  const [thc, setThc] = useState("");
+  const [cbd, setCbd] = useState("");
+  const [sativa, setSativa] = useState(50);
+  const [indica, setIndica] = useState(50);
+  const [description, setDescription] = useState("");
+  const [stockAmount, setStockAmount] = useState("");
+  const [soldCount, setSoldCount] = useState(""); // New: Sold Count State
+  const [isInStock, setIsInStock] = useState(true);
+  const [pricing, setPricing] = useState([{ size: "1g", price: "" }]);
+  const [media, setMedia] = useState<string[]>([]);
+  const [tempUrl, setTempUrl] = useState("");
+
+  // --- Review Management States ---
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [currentReviews, setCurrentReviews] = useState<any[]>([]);
+  const [revName, setRevName] = useState("");
+  const [revRating, setRevRating] = useState(5);
+  const [revComment, setRevComment] = useState("");
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
+
+  useEffect(() => { fetchProducts(); }, []);
+
+  async function fetchProducts() {
+    setLoading(true);
+    const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+    setProducts(data || []);
+    setLoading(false);
+  }
+
+  const startEdit = (item: any) => {
+    setEditingId(item.id);
+    setStrainName(item.strain_name);
+    setProductInfo(item.product_info);
+    setThc(item.thc_percent.toString());
+    setCbd(item.cbd_percent.toString());
+    setSativa(item.sativa_percent);
+    setIndica(item.indica_percent);
+    setDescription(item.description);
+    setStockAmount(item.stock_amount.toString());
+    setSoldCount(item.sold_count?.toString() || "0"); // Load sold_count
+    setIsInStock(item.is_in_stock);
+    setPricing(item.pricing || [{ size: "1g", price: "" }]);
+    setMedia(item.media_urls || []);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!strainName) return alert("Strain Name ထည့်ပေးပါ");
+    setIsSubmitting(true);
+    
+    const payload = {
+      strain_name: strainName,
+      product_info: productInfo,
+      thc_percent: parseFloat(thc) || 0,
+      cbd_percent: parseFloat(cbd) || 0,
+      sativa_percent: sativa,
+      indica_percent: indica,
+      description: description,
+      stock_amount: parseFloat(stockAmount) || 0,
+      sold_count: parseInt(soldCount) || 0, // Save sold_count
+      is_in_stock: isInStock,
+      pricing: pricing,
+      media_urls: media,
+    };
+
+    let result;
+    if (editingId) {
+      result = await supabase.from("products").update(payload).eq("id", editingId);
+    } else {
+      result = await supabase.from("products").insert([payload]);
+    }
+
+    if (result.error) {
+      alert("Error: " + result.error.message);
+    } else {
+      alert(editingId ? "Update လုပ်ပြီးပါပြီ" : "သိမ်းဆည်းပြီးပါပြီ");
+      resetForm();
+      fetchProducts();
+    }
+    setIsSubmitting(false);
+  }
+
+  const resetForm = () => {
+    setEditingId(null); setStrainName(""); setProductInfo(""); setThc(""); setCbd("");
+    setSativa(50); setIndica(50); setDescription(""); setStockAmount(""); setSoldCount("");
+    setIsInStock(true); setPricing([{ size: "1g", price: "" }]); setMedia([]);
+  };
+
+  // --- Review Logic Functions ---
+  async function openReviewManager(productId: number) {
+    setSelectedProductId(productId);
+    const { data } = await supabase.from("reviews").select("*").eq("product_id", productId).order("created_at", { ascending: false });
+    setCurrentReviews(data || []);
+    setShowReviewModal(true);
+    resetReviewForm();
+  }
+
+  async function handleSaveReview() {
+    if (!revName || !revComment) return alert("အချက်အလက်အစုံဖြည့်ပါ");
+    const payload = { product_id: selectedProductId, user_name: revName, rating: revRating, comment: revComment };
+
+    let error;
+    if (editingReviewId) {
+      const res = await supabase.from("reviews").update(payload).eq("id", editingReviewId);
+      error = res.error;
+    } else {
+      const res = await supabase.from("reviews").insert([payload]);
+      error = res.error;
+    }
+
+    if (error) alert(error.message);
+    else openReviewManager(selectedProductId!);
+  }
+
+  const resetReviewForm = () => {
+    setEditingReviewId(null); setRevName(""); setRevRating(5); setRevComment("");
+  };
+
+  return (
+    <div className="min-h-screen bg-stone-50 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        <header className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-black text-stone-800 flex items-center gap-2 uppercase tracking-tighter">
+            <Package className="text-green-700" /> Natural Herbal House <span className="text-[10px] bg-stone-200 px-2 py-1 rounded">ADMIN</span>
+          </h1>
+          <button onClick={() => { supabase.auth.signOut(); window.location.href="/login"; }} className="text-stone-400 hover:text-red-500 font-bold flex items-center gap-2">
+            <LogOut size={18}/> Logout
+          </button>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          {/* FORM SIDE */}
+          <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-stone-100 space-y-6 h-fit">
+            <div className="flex justify-between items-center border-b border-stone-50 pb-4">
+               <h2 className="font-black text-stone-800 uppercase tracking-widest text-xs flex items-center gap-2">
+                {editingId ? <Edit3 size={16} className="text-blue-600"/> : <Plus size={16} className="text-green-600"/>}
+                {editingId ? "Edit Product" : "Add New Product"}
+              </h2>
+              {editingId && <button type="button" onClick={resetForm} className="text-[10px] font-black text-red-500 underline">CANCEL EDIT</button>}
+            </div>
+
+            <div className="space-y-4">
+              <input value={strainName} onChange={e => setStrainName(e.target.value)} className="w-full p-4 bg-stone-50 rounded-2xl outline-none focus:ring-2 focus:ring-green-600 font-bold" placeholder="Strain Name (e.g. OG Kush)"/>
+              <input value={productInfo} onChange={e => setProductInfo(e.target.value)} className="w-full p-4 bg-stone-50 rounded-2xl outline-none" placeholder="Product Type (Bud, Indoor, Press)"/>
+
+              <div className="grid grid-cols-2 gap-4">
+                <input type="number" step="0.1" value={thc} onChange={e => setThc(e.target.value)} className="p-4 bg-stone-50 rounded-2xl outline-none" placeholder="THC %"/>
+                <input type="number" step="0.1" value={cbd} onChange={e => setCbd(e.target.value)} className="p-4 bg-stone-50 rounded-2xl outline-none" placeholder="CBD %"/>
+              </div>
+
+              {/* Sativa/Indica Slider */}
+              <div className="p-4 bg-stone-50 rounded-2xl space-y-3">
+                <div className="flex justify-between text-[10px] font-black text-stone-500 uppercase">
+                  <span>Sativa: {sativa}%</span>
+                  <span>Indica: {indica}%</span>
+                </div>
+                <input type="range" value={sativa} onChange={e => {setSativa(Number(e.target.value)); setIndica(100 - Number(e.target.value))}} className="w-full accent-green-800 cursor-pointer"/>
+              </div>
+
+              {/* Stock & Sold Management */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-stone-400 ml-2 uppercase tracking-widest">Stock (g)</label>
+                  <input type="number" value={stockAmount} onChange={e => setStockAmount(e.target.value)} className="w-full p-4 bg-stone-50 rounded-2xl outline-none font-bold" placeholder="Stock Amount"/>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-orange-500 ml-2 uppercase tracking-widest">Sold (g)</label>
+                  <input type="number" value={soldCount} onChange={e => setSoldCount(e.target.value)} className="w-full p-4 bg-orange-50/50 border border-orange-100 rounded-2xl outline-none font-bold text-orange-700" placeholder="Sold Amount"/>
+                </div>
+              </div>
+
+              <button type="button" onClick={() => setIsInStock(!isInStock)} className={`w-full p-4 rounded-2xl font-black text-[10px] transition-all ${isInStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                {isInStock ? "● IN STOCK" : "○ OUT OF STOCK"}
+              </button>
+
+              <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full p-4 bg-stone-50 rounded-2xl outline-none h-24" placeholder="Description..."/>
+
+              {/* Pricing */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-stone-400 uppercase ml-2">Pricing (Size & Price)</label>
+                {pricing.map((tier, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input placeholder="Size" value={tier.size} onChange={e => { const n = [...pricing]; n[index].size = e.target.value; setPricing(n); }} className="flex-1 p-3 bg-stone-50 rounded-xl outline-none text-sm"/>
+                    <input type="number" placeholder="Price" value={tier.price} onChange={e => { const n = [...pricing]; n[index].price = e.target.value; setPricing(n); }} className="flex-1 p-3 bg-stone-50 rounded-xl outline-none text-sm font-bold"/>
+                    {pricing.length > 1 && <button type="button" onClick={() => setPricing(pricing.filter((_, i) => i !== index))} className="text-red-400"><X size={18}/></button>}
+                  </div>
+                ))}
+                <button type="button" onClick={() => setPricing([...pricing, { size: "", price: "" }])} className="text-green-700 text-[10px] font-black hover:underline">+ ADD PRICE TIER</button>
+              </div>
+
+              {/* Media */}
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input value={tempUrl} onChange={e => setTempUrl(e.target.value)} placeholder="Image URL..." className="flex-1 p-3 bg-stone-50 rounded-xl outline-none text-sm"/>
+                  <button type="button" onClick={() => { if(tempUrl){ setMedia([...media, tempUrl]); setTempUrl(""); } }} className="bg-stone-800 text-white px-4 rounded-xl font-bold text-xs uppercase">Add</button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {media.map((url, i) => (
+                    <div key={i} className="relative w-14 h-14 rounded-lg overflow-hidden border border-stone-200">
+                      <img src={url} className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => setMedia(media.filter((_, idx) => idx !== i))} className="absolute top-0 right-0 bg-red-500 text-white p-0.5"><X size={10}/></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button disabled={isSubmitting} className={`w-full py-5 rounded-[1.5rem] font-bold text-lg transition-all flex justify-center items-center gap-2 shadow-lg ${editingId ? 'bg-blue-600' : 'bg-green-800'} text-white`}>
+              {isSubmitting ? <Loader2 className="animate-spin"/> : editingId ? "UPDATE PRODUCT" : "SAVE PRODUCT"}
+            </button>
+          </form>
+
+          {/* LIST VIEW SIDE */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-black text-stone-800 flex items-center gap-2 uppercase tracking-tighter">
+              <Database size={20} className="text-green-700"/> LIVE INVENTORY ({products.length})
+            </h2>
+            <div className="space-y-4 overflow-y-auto max-h-[85vh] pr-2">
+              {products.map(item => (
+                <div key={item.id} className="bg-white p-4 rounded-3xl border border-stone-100 flex gap-4 items-center shadow-sm group">
+                  <img src={item.media_urls?.[0]} className="w-16 h-16 rounded-2xl object-cover bg-stone-50" />
+                  <div className="flex-1">
+                    <h3 className="font-bold text-stone-800 uppercase text-sm leading-none">{item.strain_name}</h3>
+                    <p className="text-[9px] text-stone-400 font-black mt-1 uppercase">
+                       {item.sold_count || 0}g Sold • {item.stock_amount}g Stock
+                    </p>
+                    <div className={`text-[8px] font-black px-2 py-0.5 rounded-full inline-block mt-2 ${item.is_in_stock ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+                      {item.is_in_stock ? 'IN STOCK' : 'OUT STOCK'}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => openReviewManager(item.id)} className="p-2 text-stone-300 hover:text-orange-500 transition-colors flex flex-col items-center gap-1">
+                      <MessageSquare size={18}/>
+                      <span className="text-[7px] font-black">REVIEWS</span>
+                    </button>
+                    <button onClick={() => startEdit(item)} className="p-2 text-stone-300 hover:text-blue-500 transition-colors"><Edit3 size={18}/></button>
+                    <button onClick={async () => { if(confirm('Delete?')) { await supabase.from('products').delete().eq('id', item.id); fetchProducts(); } }} className="p-2 text-stone-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- REVIEW MANAGEMENT MODAL --- */}
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+              <h3 className="font-black text-stone-800 uppercase text-xs tracking-widest">Manage Product Reviews</h3>
+              <button onClick={() => setShowReviewModal(false)} className="p-2 hover:bg-white rounded-full transition-colors"><X size={20}/></button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Add/Edit Review Form */}
+              <div className="bg-stone-50 p-6 rounded-[2rem] border border-stone-100 space-y-4">
+                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                  {editingReviewId ? "Edit Review" : "Add New Fake Review"}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <input value={revName} onChange={e => setRevName(e.target.value)} placeholder="User Name" className="p-3 bg-white rounded-xl outline-none text-sm font-bold border border-stone-100" />
+                  <select value={revRating} onChange={e => setRevRating(Number(e.target.value))} className="p-3 bg-white rounded-xl outline-none text-sm font-bold border border-stone-100">
+                    {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} Stars</option>)}
+                  </select>
+                </div>
+                <textarea value={revComment} onChange={e => setRevComment(e.target.value)} placeholder="Review comment..." className="w-full p-3 bg-white rounded-xl outline-none text-sm border border-stone-100 h-20" />
+                <div className="flex gap-2">
+                  <button onClick={handleSaveReview} className="flex-1 py-3 bg-stone-800 text-white rounded-xl font-black text-xs uppercase tracking-widest">
+                    {editingReviewId ? "Update Review" : "Add Review"}
+                  </button>
+                  {editingReviewId && (
+                    <button onClick={resetReviewForm} className="px-4 py-3 bg-stone-200 text-stone-600 rounded-xl font-black text-xs uppercase">Cancel</button>
+                  )}
+                </div>
+              </div>
+
+              {/* Review List */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest px-2">Existing Reviews ({currentReviews.length})</p>
+                {currentReviews.length === 0 ? (
+                  <p className="text-center py-10 text-stone-300 text-xs font-bold uppercase italic">No reviews yet.</p>
+                ) : (
+                  currentReviews.map(rev => (
+                    <div key={rev.id} className="p-4 bg-white border border-stone-100 rounded-2xl flex justify-between items-center hover:border-orange-200 transition-colors shadow-sm">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-stone-800 text-xs uppercase">{rev.user_name}</span>
+                          <div className="flex text-yellow-500"><Star size={8} fill="currentColor"/> <span className="text-[10px] font-bold ml-0.5">{rev.rating}</span></div>
+                        </div>
+                        <p className="text-stone-500 text-xs mt-1 italic line-clamp-1">"{rev.comment}"</p>
+                      </div>
+                      <div className="flex gap-1 ml-4">
+                        <button onClick={() => { setEditingReviewId(rev.id); setRevName(rev.user_name); setRevRating(rev.rating); setRevComment(rev.comment); }} className="p-2 text-stone-300 hover:text-blue-500"><Edit3 size={14}/></button>
+                        <button onClick={async () => { if(confirm('Delete Review?')) { await supabase.from('reviews').delete().eq('id', rev.id); openReviewManager(selectedProductId!); } }} className="p-2 text-stone-300 hover:text-red-500"><Trash2 size={14}/></button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="app/components/Footer.tsx">
+export default function Footer() {
+  return (
+    <footer className="bg-stone-900 text-white py-16 px-6 mt-20">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div>
+          <h2 className="text-xl font-black mb-4">NATURAL HERBAL HOUSE</h2>
+          <p className="text-stone-400 text-sm leading-relaxed">The finest quality cannabis selection for connoisseurs. Organic, pure, and potent.</p>
+        </div>
+        <div>
+          <h4 className="font-black text-xs uppercase tracking-widest text-green-500 mb-6">Quick Links</h4>
+          <ul className="space-y-3 text-sm font-bold text-stone-400">
+            <li className="hover:text-white cursor-pointer transition-colors">Privacy Policy</li>
+            <li className="hover:text-white cursor-pointer transition-colors">Terms of Service</li>
+            <li className="hover:text-white cursor-pointer transition-colors">Lab Results</li>
+          </ul>
+        </div>
+        <div className="text-right">
+          <p className="text-stone-500 text-xs font-bold uppercase tracking-widest">© 2026 NATURAL HERBAL HOUSE</p>
+          <p className="text-stone-600 text-[10px] mt-2 font-medium italic">Crafted for Excellence.</p>
+        </div>
+      </div>
+    </footer>
+  );
+}
+</file>
+
+<file path="app/components/Navbar.tsx">
+import Link from 'next/link';
+
+export default function Navbar() {
+  const logo = "https://res.cloudinary.com/dzmgrtzem/image/upload/v1772378992/B86B5807-2671-4D75-9847-A35D3786B6D2_xua8b7.jpg";
+
+  return (
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-100">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+        <Link href="/" className="flex items-center gap-3">
+          <img src={logo} alt="Logo" className="w-12 h-12 rounded-full border-2 border-green-600 shadow-sm" />
+          <span className="font-black text-stone-800 tracking-tighter text-xl hidden md:block">NATURAL HERBAL HOUSE</span>
+        </Link>
+        <div className="flex gap-8 font-bold text-sm text-stone-600 uppercase tracking-widest">
+          <Link href="/" className="hover:text-green-700 transition-colors">Home</Link>
+          <Link href="/articles" className="hover:text-green-700 transition-colors">Articles</Link>
+          <Link href="/contact" className="hover:text-green-700 transition-colors">Contact</Link>
+        </div>
+      </div>
+    </nav>
+  );
+}
+</file>
+
+<file path="app/login/page.tsx">
+"use client";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(""); // Error ပြရန်
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMessage(""); // Error အဟောင်းကို ရှင်းထုတ်ပါ
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      setErrorMessage("Login မှားယွင်းနေပါသည်- " + error.message);
+      setLoading(false);
+    } else {
+      // Alert မပြဘဲ Admin Panel ဆီ တန်းဝင်သွားပါမယ်
+      window.location.href = "/admin";
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-stone-100 p-4">
+      <form onSubmit={handleLogin} className="bg-white p-8 rounded-2xl shadow-md w-full max-w-sm border border-stone-200">
+        <h1 className="text-2xl font-bold mb-6 text-stone-800 text-center">Admin Login</h1>
+        
+        {/* Error ပြရန်နေရာ */}
+        {errorMessage && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-100">
+            {errorMessage}
+          </div>
+        )}
+
+        <input 
+          type="email" placeholder="Email" value={email} required
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full p-3 border rounded-xl mb-4 outline-none focus:ring-2 focus:ring-green-500 transition-all"
+        />
+        <input 
+          type="password" placeholder="Password" value={password} required
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full p-3 border rounded-xl mb-6 outline-none focus:ring-2 focus:ring-green-500 transition-all"
+        />
+        <button 
+          disabled={loading}
+          className="w-full bg-green-800 text-white py-3 rounded-xl font-bold hover:bg-green-900 transition-all disabled:bg-stone-300 shadow-lg shadow-green-900/20"
+        >
+          {loading ? "စစ်ဆေးနေပါသည်..." : "Login ဝင်မည်"}
+        </button>
+      </form>
+    </div>
+  );
+}
+</file>
+
+<file path="app/product/[id]/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { ChevronLeft, Info, Package, AlertCircle, Loader2, Star } from "lucide-react";
+import Link from "next/link";
+
+export default function ProductDetail() {
+  const { id } = useParams();
+  const router = useRouter();
+  const [product, setProduct] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeImage, setActiveImage] = useState("");
+
+  // --- Simulation States for New Review ---
+  const [simOrderId, setSimOrderId] = useState("");
+  const [simRating, setSimRating] = useState(5);
+  const [simComment, setSimComment] = useState("");
+  const [isChecking, setIsChecking] = useState(false);
+
+  useEffect(() => {
+    async function fetchProductData() {
+      setLoading(true);
+      const { data: productData } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (!productData) {
+        router.push("/");
+        return;
+      }
+
+      const { data: reviewData } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("product_id", id)
+        .order("created_at", { ascending: false });
+
+      setProduct(productData);
+      setReviews(reviewData || []);
+      setActiveImage(productData.media_urls?.[0] || "");
+      setLoading(false);
+    }
+    fetchProductData();
+  }, [id, router]);
+
+  // --- Helpful Counter Logic (Fixed for Database Sync) ---
+  async function handleHelpfulClick(reviewId: any) {
+    // ၁။ UI မှာ ချက်ချင်းတိုးပြမယ် (Optimistic Update)
+    setReviews(prev => prev.map(rev => 
+      rev.id === reviewId ? { ...rev, helpful_count: (rev.helpful_count || 0) + 1 } : rev
+    ));
+
+    // ၂။ Simulation review (fake-id) ဖြစ်နေရင် string ပါနေမှာမို့လို့ database update ကို ကျော်မယ်
+    if (reviewId.toString().includes("fake-")) {
+      console.log("Simulation review - UI only update");
+      return;
+    }
+
+    // ၃။ Database update (Review အစစ်ဖြစ်လို့ DB ထဲမှာပါ သွားတိုးမယ်)
+    const { error } = await supabase.rpc('increment_helpful_count', { 
+      review_id_input: Number(reviewId) // DB က int8 ဖြစ်လို့ number အဖြစ်ပြောင်းပို့မယ်
+    });
+    
+    if (error) {
+      console.error("Database Error:", error);
+      // DB မှာ update လုပ်လို့မရရင် UI ကို မူလအတိုင်းပြန်နှုတ်မယ်
+      setReviews(prev => prev.map(rev => 
+        rev.id === reviewId ? { ...rev, helpful_count: (rev.helpful_count || 0) - 1 } : rev
+      ));
+    }
+  }
+
+  // --- Simulation Submit Logic ---
+  async function handleSimSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!simOrderId || !simComment) return alert("ကျေးဇူးပြု၍ အချက်အလက်စုံလင်စွာ ဖြည့်ပေးပါ။");
+
+    setIsChecking(true);
+
+    setTimeout(() => {
+      const fakeNewReview = {
+        id: `fake-${Date.now()}`, // Simulation id ကို string နဲ့ ပေးထားခြင်း
+        user_name: "Verified Customer",
+        rating: simRating,
+        comment: simComment,
+        created_at: new Date().toISOString(),
+        helpful_count: 0
+      };
+
+      setReviews(prev => [fakeNewReview, ...prev]);
+      setIsChecking(false);
+      setSimOrderId(""); 
+      setSimComment(""); 
+      setSimRating(5);
+      alert(`Order ID #${simOrderId} ကို စစ်ဆေးပြီးပါပြီ။`);
+    }, 2000);
+  }
+
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((acc, rev) => acc + rev.rating, 0) / reviews.length).toFixed(1)
+    : 0;
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="animate-spin text-green-800" size={40} />
+    </div>
+  );
+
+  if (!product) return null;
+
+  return (
+    <main className="max-w-7xl mx-auto px-6 py-12 min-h-screen">
+      <Link href="/" className="inline-flex items-center gap-2 text-stone-400 font-bold text-sm mb-12 hover:text-green-800 transition-colors group">
+        <div className="p-2 rounded-full border border-stone-100 group-hover:border-green-800">
+          <ChevronLeft size={18}/>
+        </div>
+        BACK TO COLLECTION
+      </Link>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+        {/* Media Section */}
+        <div className="space-y-6">
+          <div className="rounded-[3rem] overflow-hidden bg-stone-50 border border-stone-100 shadow-2xl aspect-[4/5]">
+            <img src={activeImage} className="w-full h-full object-cover transition-all duration-500" alt={product.strain_name} />
+          </div>
+          
+          {product.media_urls && product.media_urls.length > 1 && (
+            <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
+              {product.media_urls.map((url: string, i: number) => (
+                <button key={i} onClick={() => setActiveImage(url)} className={`w-20 h-20 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all ${activeImage === url ? 'border-green-800 scale-95' : 'border-stone-100'}`}>
+                  <img src={url} className="w-full h-full object-cover" alt={`Preview ${i}`} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Details Section */}
+        <div className="flex flex-col space-y-10">
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-green-800 font-black text-[10px] uppercase tracking-widest bg-green-50 px-4 py-2 rounded-full">
+                {product.product_info || "Natural Herbal"}
+              </span>
+              
+              {product.sold_count > 0 && (
+                <div className="flex items-center gap-1.5 bg-orange-50 text-orange-700 px-3 py-2 rounded-full border border-orange-100">
+                   <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></div>
+                   <span className="text-[10px] font-black uppercase tracking-widest">{product.sold_count}g Sold</span>
+                </div>
+              )}
+            </div>
+
+            <h1 className="text-5xl md:text-7xl font-black text-stone-900 tracking-tighter uppercase leading-[0.9] mb-4">
+              {product.strain_name}
+            </h1>
+
+            <div className="flex items-center gap-2">
+               <div className="flex text-yellow-500">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={14} fill={i < Math.round(Number(averageRating)) ? "currentColor" : "none"} className={i < Math.round(Number(averageRating)) ? "" : "text-stone-200"} />
+                  ))}
+               </div>
+               <span className="text-xs font-black text-stone-400 uppercase tracking-widest">
+                  {averageRating} ({reviews.length} Verified Reviews)
+               </span>
+            </div>
+          </div>
+
+          <div className="bg-stone-50 rounded-[2.5rem] p-8 border border-stone-100 grid grid-cols-2 gap-8 relative overflow-hidden">
+            <div className="space-y-1">
+               <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">THC Content</p>
+               <p className="text-4xl font-black text-stone-900">{product.thc_percent}%</p>
+            </div>
+            <div className="space-y-1">
+               <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">CBD Content</p>
+               <p className="text-4xl font-black text-stone-900">{product.cbd_percent}%</p>
+            </div>
+            <div className="col-span-2 pt-4 border-t border-stone-200">
+               <div className="flex justify-between text-[10px] font-black text-stone-500 uppercase mb-3">
+                 <span>Sativa {product.sativa_percent}%</span>
+                 <span>Indica {product.indica_percent}%</span>
+               </div>
+               <div className="h-2 w-full bg-stone-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-green-800 transition-all duration-1000" style={{ width: `${product.sativa_percent}%` }}></div>
+               </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-black text-stone-900 uppercase text-xs tracking-[0.2em]">Description</h3>
+            <p className="text-stone-500 leading-relaxed font-medium text-lg">
+              {product.description || "No description available for this product."}
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-black text-stone-900 uppercase text-xs tracking-[0.2em]">Select Quantity</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {product.pricing?.map((tier: any, i: number) => (
+                <div key={i} className="p-5 bg-white rounded-2xl border-2 border-stone-100 flex justify-between items-center group hover:border-green-800 transition-all cursor-pointer shadow-sm">
+                  <span className="font-black text-stone-600 group-hover:text-green-800 transition-colors uppercase">{tier.size}</span>
+                  <span className="font-black text-stone-900 text-lg">{tier.price?.toLocaleString()} MMK</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Customer Reviews Section */}
+          <div className="space-y-8 pt-16 border-t border-stone-100">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-black text-stone-900 text-lg tracking-tight">Ratings & Reviews</h3>
+                <span className="text-stone-400 font-medium text-sm">({reviews.length})</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {reviews.map((rev) => (
+                <div key={rev.id} className="bg-white p-5 rounded-[2rem] border border-stone-100 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 font-bold text-xs shrink-0 border border-stone-200 uppercase">
+                      {rev.user_name?.charAt(0)}
+                    </div>
+
+                    <div className="flex-1 space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-stone-800 text-sm">{rev.user_name}</span>
+                        <span className="text-[10px] text-stone-400 font-medium">
+                          {new Date(rev.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="flex text-yellow-500">
+                          {[...Array(5)].map((_, starIdx) => (
+                            <Star key={starIdx} size={10} fill={starIdx < rev.rating ? "currentColor" : "none"} className={starIdx < rev.rating ? "" : "text-stone-100"} />
+                          ))}
+                        </div>
+                        <div className="h-2 w-[1px] bg-stone-200"></div>
+                        <span className="text-[9px] font-black text-stone-400 uppercase tracking-tighter">Verified Purchase</span>
+                      </div>
+
+                      <p className="text-stone-700 text-[13px] leading-relaxed pt-1">{rev.comment}</p>
+                      
+                      <div className="flex items-center gap-4 pt-3">
+                        <button onClick={() => handleHelpfulClick(rev.id)} className="flex items-center gap-1.5 text-stone-400 hover:text-stone-900 transition-all active:scale-90">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${rev.helpful_count > 0 ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-stone-50 border border-stone-100'}`}>
+                            <span className="text-[12px]">👍</span>
+                          </div>
+                          <div className="flex items-center gap-1 font-black uppercase tracking-tighter text-[10px]">
+                            <span>Helpful</span>
+                            {rev.helpful_count > 0 && <span className="text-stone-900 ml-0.5">{rev.helpful_count}</span>}
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Simulation Review Form Section */}
+            <div className="mt-16 bg-white rounded-[2.5rem] p-8 border border-stone-100 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                <Package size={100} />
+              </div>
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-2xl bg-green-800 flex items-center justify-center text-white">
+                    <Star size={20} fill="currentColor" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-stone-900 uppercase text-xs tracking-[0.2em]">Customer Voice</h4>
+                    <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mt-0.5">Verified Purchase Only</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSimSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-stone-400 uppercase ml-2 tracking-widest">Order ID Received</label>
+                      <input value={simOrderId} onChange={(e) => setSimOrderId(e.target.value)} placeholder="#12345" className="w-full p-4 bg-stone-50 rounded-2xl outline-none border border-stone-50 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-green-800 transition-all" />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-stone-400 uppercase ml-2 tracking-widest">Rate our quality</label>
+                      <div className="flex items-center justify-between h-[52px] bg-stone-50 px-5 rounded-2xl border border-stone-50">
+                        <div className="flex text-yellow-500 gap-1.5">
+                          {[1, 2, 3, 4, 5].map((num) => (
+                            <button key={num} type="button" onClick={() => setSimRating(num)} className="hover:scale-125 transition-transform active:scale-95">
+                              <Star size={18} fill={num <= simRating ? "currentColor" : "none"} className={num <= simRating ? "" : "text-stone-200"} />
+                            </button>
+                          ))}
+                        </div>
+                        <span className="text-[10px] font-black text-stone-400">{simRating}/5</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-stone-400 uppercase ml-2 tracking-widest">Your experience</label>
+                    <textarea value={simComment} onChange={(e) => setSimComment(e.target.value)} placeholder="What did you like about this strain?" className="w-full p-5 bg-stone-50 rounded-[2rem] outline-none border border-stone-50 text-sm h-32 focus:bg-white focus:ring-2 focus:ring-green-800 transition-all resize-none" />
+                  </div>
+
+                  <button disabled={isChecking} className={`w-full py-6 rounded-[1.8rem] font-black text-xs uppercase tracking-[0.3em] transition-all flex justify-center items-center gap-3 shadow-lg shadow-stone-100 ${isChecking ? 'bg-stone-100 text-stone-400' : 'bg-stone-900 text-white hover:bg-green-900 active:scale-95'}`}>
+                    {isChecking ? (
+                      <><Loader2 className="animate-spin" size={16}/><span>Verifying Order ID...</span></>
+                    ) : (
+                      "Post Review"
+                    )}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <button disabled className="w-full py-7 bg-stone-200 text-stone-400 rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 cursor-not-allowed group relative overflow-hidden">
+            <AlertCircle size={24}/> 
+            <span>BUY BUTTON DISABLED</span>
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+}
+</file>
+
+<file path="app/globals.css">
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+</file>
+
+<file path="app/layout.tsx">
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Natural Herbal House | Premium Cannabis Collection",
+  description: "The finest quality cannabis selection for connoisseurs.",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className={`${inter.className} bg-stone-50 text-stone-900`}>
+        <Navbar />
+        {/* children နေရာမှာ ကျွန်တော်တို့ ရေးသမျှ Page တွေ အစားထိုး ဝင်လာမှာပါ */}
+        <main>{children}</main>
+        <Footer />
+      </body>
+    </html>
+  );
+}
+</file>
+
+<file path="app/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+import { Loader2, ArrowRight, Leaf, Sparkles, MoveDown, Activity } from "lucide-react";
+
+export default function HomePage() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const logoUrl = "https://res.cloudinary.com/dzmgrtzem/image/upload/v1772378992/B86B5807-2671-4D75-9847-A35D3786B6D2_xua8b7.jpg";
+
+  useEffect(() => {
+    async function fetchProducts() {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        setProducts(data || []);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProducts();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#FDFCFB]">
+      
+      {/* --- ၁။ HERO SECTION (အပေါ်ဆုံးအပိုင်း) --- */}
+      <section className="relative min-h-[90vh] flex items-center justify-center pt-20 pb-32 px-6 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] opacity-[0.03] blur-3xl">
+             <img src={logoUrl} className="w-full h-full object-contain" alt="background-blur" />
+          </div>
+          <Leaf className="absolute top-20 -left-10 w-64 h-64 text-green-900/5 rotate-45" />
+          <Leaf className="absolute bottom-20 -right-10 w-80 h-80 text-green-900/5 -rotate-12" />
+        </div>
+
+        <div className="max-w-5xl mx-auto text-center relative z-10">
+          <div className="mb-12 flex flex-col items-center">
+             <div className="relative group mb-8">
+                <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-2xl group-hover:bg-green-500/30 transition-all duration-700"></div>
+                <img 
+                  src={logoUrl} 
+                  className="w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-white shadow-2xl relative z-10 transition-transform duration-700 group-hover:scale-105" 
+                  alt="Logo" 
+                />
+             </div>
+             <span className="inline-flex items-center gap-2 px-6 py-2 bg-stone-900 text-stone-100 rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-lg">
+                <Sparkles size={12} className="text-yellow-500" />
+                Est. 2026 • Premium Quality
+             </span>
+          </div>
+
+          <div className="space-y-4 mb-10">
+            <h1 className="text-6xl md:text-[7rem] font-black text-stone-900 tracking-tighter leading-[0.85] uppercase">
+               Nature's <br /> 
+               <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-800 via-green-700 to-yellow-600">
+                 Gold Reserve
+               </span>
+            </h1>
+            <p className="text-stone-500 font-medium text-lg md:text-xl italic max-w-2xl mx-auto leading-relaxed">
+              "Where purity meets potency. Explore our meticulously curated 
+              cannabis collection, grown for the true connoisseur."
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+             <button 
+               onClick={() => document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth' })}
+               className="bg-green-800 text-white px-10 py-5 rounded-full font-black text-xs uppercase tracking-widest hover:bg-stone-900 transition-all shadow-xl hover:-translate-y-1"
+             >
+               Browse Inventory
+             </button>
+             <button 
+               onClick={() => document.getElementById('process')?.scrollIntoView({ behavior: 'smooth' })}
+               className="bg-white border-2 border-stone-100 text-stone-800 px-10 py-5 rounded-full font-black text-xs uppercase tracking-widest hover:border-green-800 transition-all"
+             >
+               Our Process
+             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* --- ၂။ OUR PROCESS SECTION (ယုံကြည်မှုတည်ဆောက်သည့်အပိုင်း) --- */}
+      <section id="process" className="py-24 bg-white px-6 border-y border-stone-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-sm font-black text-green-700 uppercase tracking-[0.4em]">The Journey</h2>
+            <p className="text-4xl md:text-5xl font-black text-stone-900 tracking-tighter">OUR PROCESS</p>
+            <div className="w-12 h-1 bg-yellow-600 mx-auto rounded-full"></div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div className="space-y-6 text-center group">
+              <div className="w-20 h-20 bg-stone-50 rounded-[2rem] flex items-center justify-center mx-auto border border-stone-100 group-hover:bg-green-800 group-hover:text-white transition-all duration-500 shadow-sm">
+                <span className="text-2xl font-black italic">01</span>
+              </div>
+              <div className="space-y-2 px-4">
+                <h3 className="text-xl font-black text-stone-800 uppercase tracking-tight">Genetic Selection</h3>
+                <p className="text-stone-500 text-sm leading-relaxed font-medium italic">
+                  အကောင်းဆုံးသော မျိုးစေ့များကိုသာ အသေးစိတ် စစ်ဆေးရွေးချယ်ပြီး အရည်အသွေးမြင့်မားမှုကို စတင်ဖန်တီးပါသည်။
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6 text-center group">
+              <div className="w-20 h-20 bg-stone-50 rounded-[2rem] flex items-center justify-center mx-auto border border-stone-100 group-hover:bg-green-800 group-hover:text-white transition-all duration-500 shadow-sm">
+                <span className="text-2xl font-black italic">02</span>
+              </div>
+              <div className="space-y-2 px-4">
+                <h3 className="text-xl font-black text-stone-800 uppercase tracking-tight">Organic Growth</h3>
+                <p className="text-stone-500 text-sm leading-relaxed font-medium italic">
+                  ဓာတုပစ္စည်းများ ကင်းစင်စွာဖြင့် သဘာဝအတိုင်း အဆင့်မြင့်စိုက်ပျိုးနည်းစနစ်များကို အသုံးပြု၍ ဂရုတစိုက် ပြုစုပျိုးထောင်ပါသည်။
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6 text-center group">
+              <div className="w-20 h-20 bg-stone-50 rounded-[2rem] flex items-center justify-center mx-auto border border-stone-100 group-hover:bg-green-800 group-hover:text-white transition-all duration-500 shadow-sm">
+                <span className="text-2xl font-black italic">03</span>
+              </div>
+              <div className="space-y-2 px-4">
+                <h3 className="text-xl font-black text-stone-800 uppercase tracking-tight">Curing & Testing</h3>
+                <p className="text-stone-500 text-sm leading-relaxed font-medium italic">
+                  အာနိသင်အပြည့်အဝရရှိစေရန် စနစ်တကျ အခြောက်ခံပြီး Lab တွင် အာနိသင်များကို စစ်ဆေးပြီးမှ ရောင်းချပါသည်။
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- ၃။ PRODUCT GRID SECTION (ပစ္စည်းများပြသသည့်အပိုင်း) --- */}
+      <main id="inventory" className="max-w-7xl mx-auto px-6 py-32">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+          <div className="space-y-2">
+            <h2 className="text-4xl md:text-5xl font-black text-stone-900 uppercase tracking-tighter leading-none">Inventory</h2>
+            <p className="text-xs font-bold text-green-700 uppercase tracking-[0.2em]">Premium Grade Selection</p>
+          </div>
+          <span className="inline-block text-[10px] font-black text-stone-500 bg-stone-100 px-5 py-2.5 rounded-full border border-stone-200 self-start">
+            {products.length} Products Available
+          </span>
+        </div>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <Loader2 className="w-10 h-10 animate-spin text-green-800" />
+            <p className="text-stone-400 font-bold text-[10px] uppercase tracking-widest">Loading Herbals...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+            {products.map((product) => (
+              <Link key={product.id} href={`/product/${product.id}`} className="group">
+                <div className="bg-white rounded-[2.5rem] overflow-hidden border border-stone-100 shadow-sm hover:shadow-[0_30px_60px_rgba(0,0,0,0.08)] hover:-translate-y-2 transition-all duration-500 flex flex-col h-full">
+                  
+                  <div className="aspect-[4/5] overflow-hidden bg-stone-100 relative">
+                    <img 
+                      src={product.media_urls?.[0] || "https://placehold.co/600x800?text=Natural+Herbal"} 
+                      alt={product.strain_name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                    />
+                    {!product.is_in_stock && (
+                      <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-[4px] flex items-center justify-center">
+                        <span className="bg-white text-stone-900 px-8 py-3 rounded-full font-black text-xs tracking-tighter shadow-xl">
+                          RESTOCKING SOON
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="p-8 flex flex-col flex-1">
+                    <div className="mb-6">
+                      <p className="text-[10px] font-black text-green-700 uppercase tracking-widest mb-1">
+                        {product.product_info || "Top Shelf"}
+                      </p>
+                      <h3 className="text-3xl font-black text-stone-800 group-hover:text-green-800 transition-colors uppercase tracking-tighter leading-none mb-4">
+                        {product.strain_name}
+                      </h3>
+
+                      <div className="flex gap-2">
+                        <div className="bg-stone-50 border border-stone-100 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                           <Activity size={12} className="text-green-700" />
+                           <span className="text-[9px] font-black text-stone-600 uppercase">THC: {product.thc_percent}%</span>
+                        </div>
+                        {(product.sativa_percent || product.indica_percent) && (
+                          <div className="bg-stone-50 border border-stone-100 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                             <span className="text-[9px] font-black text-stone-600 uppercase">
+                               {product.sativa_percent}% S / {product.indica_percent}% I
+                             </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-auto pt-6 border-t border-stone-100 flex items-center justify-between">
+                       <div className="flex flex-col">
+                         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Price starting at</span>
+                         <span className="text-2xl font-black text-stone-900">
+                           {product.pricing?.[0]?.price?.toLocaleString()} <span className="text-xs">MMK</span>
+                         </span>
+                       </div>
+                       <div className="w-12 h-12 rounded-full bg-stone-900 text-white flex items-center justify-center group-hover:bg-green-800 transition-all duration-500 group-hover:rotate-[-45deg]">
+                          <ArrowRight size={20} />
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+</file>
+
+<file path="lib/supabase.ts">
+import { createBrowserClient } from '@supabase/ssr'
+
+export const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+</file>
+
+<file path="public/file.svg">
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
+</file>
+
+<file path="public/globe.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+</file>
+
+<file path="public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="public/vercel.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+</file>
+
+<file path="public/window.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path="eslint.config.mjs">
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;
+</file>
+
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;
+</file>
+
+<file path="package.json">
+{
+  "name": "natural-herbal-house",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.15.0",
+    "@supabase/auth-helpers-react": "^0.15.0",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.98.0",
+    "cloudinary": "^2.9.0",
+    "lucide-react": "^0.575.0",
+    "next": "16.1.6",
+    "next-cloudinary": "^6.17.5",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+</file>
+
+<file path="postcss.config.mjs">
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
+</file>
+
+<file path="proxy.ts">
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function proxy(request: NextRequest) {
+  let response = NextResponse.next({
+    request: { headers: request.headers },
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return request.cookies.get(name)?.value },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({ name, value, ...options })
+          response = NextResponse.next({ request: { headers: request.headers } })
+          response.cookies.set({ name, value, ...options })
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({ name, value: '', ...options })
+          response = NextResponse.next({ request: { headers: request.headers } })
+          response.cookies.set({ name, value: '', ...options })
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Admin page ကိုသွားရင် User မရှိရင် Login ကိုပို့
+  if (!user && request.nextUrl.pathname.startsWith('/admin')) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // User ရှိနေရင် Login page ကို ထပ်ပေးမဝင်ဘဲ Admin ကိုပို့
+  if (user && request.nextUrl.pathname === '/login') {
+    return NextResponse.redirect(new URL('/admin', request.url))
+  }
+
+  return response
+}
+
+export const config = {
+  matcher: ['/admin/:path*', '/login'],
+}
+</file>
+
+<file path="README.md">
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}
+</file>
+
+</files>
