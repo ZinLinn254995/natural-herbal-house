@@ -2,8 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
-import { Loader2, ArrowRight, Leaf, Sparkles, MoveDown, Activity, Star, TrendingUp, ArrowUpRight, Truck, ShieldCheck } from "lucide-react";
+import Link from "next/link"; // Link တစ်ခုတည်းပဲ ထားပါ
+
+// Icons တွေကို lucide-react ကနေ သီးသန့် ခွဲထုတ်ပြီး import လုပ်ပါ
+import { 
+  Loader2, 
+  Leaf, 
+  Sparkles, 
+  Star, 
+  ArrowUpRight, 
+  Truck, 
+  ShieldCheck 
+} from "lucide-react";
 
 export default function HomePage() {
   const [products, setProducts] = useState<any[]>([]);
