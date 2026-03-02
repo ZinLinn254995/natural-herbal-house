@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ChevronLeft, Info, Package, AlertCircle, Loader2, Star } from "lucide-react";
+import { ChevronLeft, Info, Package, AlertCircle, Loader2, Star, MessageSquare, } from "lucide-react";
 import Link from "next/link";
 
 export default function ProductDetail() {
@@ -351,10 +351,15 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          <button disabled className="w-full py-7 bg-stone-200 text-stone-400 rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 cursor-not-allowed group relative overflow-hidden">
-            <AlertCircle size={24}/> 
-            <span>BUY BUTTON DISABLED</span>
-          </button>
+          <a 
+  href="https://m.me/61587729868096" 
+  target="_blank" 
+  rel="noopener noreferrer"
+  className="w-full py-7 bg-green-800 text-white rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 cursor-pointer group relative overflow-hidden active:scale-95 transition-transform shadow-lg hover:bg-green-900"
+>
+  <MessageSquare size={24} /> 
+  <span>ORDER VIA MESSENGER</span>
+</a>
         </div>
       </div>
     </main>
