@@ -16,25 +16,25 @@ export default function Footer() {
           <ul className="space-y-4 text-sm font-bold text-stone-400">
             {/* Facebook Link */}
             <li>
-              <a 
-                href="https://m.me/61587729868096" 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href="https://m.me/61587729868096"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-3 hover:text-blue-500 transition-colors group"
               >
                 <Facebook size={18} className="group-hover:scale-110 transition-transform" />
                 <span>Facebook Messenger</span>
               </a>
             </li>
-            
+
             {/* Viber Link */}
             <li>
-              <a 
-                href="https://invite.viber.com/?g2=AQB7VHw66uKFylXx5AajrYS4ukmrCYC3bvz%2FWjwKENUv6rlbt7uBaCHDdsFmn3uq" 
+              <a
+                href="https://invite.viber.com/?g2=AQB7VHw66uKFylXx5AajrYS4ukmrCYC3bvz%2FWjwKENUv6rlbt7uBaCHDdsFmn3uq"
                 className="flex items-center gap-3 hover:text-purple-500 transition-colors group"
               >
                 <Phone size={18} className="group-hover:scale-110 transition-transform" />
-                <span>Viber Chat</span>
+                <span>Viber Channel</span>
               </a>
             </li>
           </ul>

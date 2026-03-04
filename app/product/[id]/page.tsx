@@ -30,6 +30,15 @@ export default function ProductDetail() {
   const currentReviews = reviews.slice(indexOfFirstReview, indexOfLastReview);
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
 
+  const getMediaType = (url: string) => {
+    if (!url) return 'image';
+    // Cloudinary video link သို့မဟုတ် video extension များ စစ်ဆေးခြင်း
+    if (url.includes('/video/upload/') || url.match(/\.(mp4|webm|ogg|mov)$/i)) {
+      return 'video';
+    }
+    return 'image';
+  };
+
   useEffect(() => {
     async function fetchProductData() {
       setLoading(true);
@@ -135,17 +144,57 @@ export default function ProductDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
         {/* Media Section */}
         <div className="space-y-6">
-          <div className="rounded-[3rem] overflow-hidden bg-stone-50 border border-stone-100 shadow-2xl aspect-[4/5]">
-            <img src={activeImage} className="w-full h-full object-cover transition-all duration-500" alt={product.strain_name} />
+          {/* Main Preview Area */}
+          <div className="rounded-[3rem] overflow-hidden bg-stone-50 border border-stone-100 shadow-2xl aspect-[4/5] relative">
+            {getMediaType(activeImage) === 'video' ? (
+              <video
+                key={activeImage} // URL ပြောင်းရင် Video Player ပါ reset ဖြစ်အောင် key ထည့်ရပါမယ်
+                src={activeImage}
+                controls
+                autoPlay
+                muted
+                loop
+                className="w-full h-full object-cover transition-all duration-500"
+              />
+            ) : (
+              <img
+                src={activeImage}
+                className="w-full h-full object-cover transition-all duration-500"
+                alt={product.strain_name}
+              />
+            )}
           </div>
 
+          {/* Thumbnails List */}
           {product.media_urls && product.media_urls.length > 1 && (
             <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
-              {product.media_urls.map((url: string, i: number) => (
-                <button key={i} onClick={() => setActiveImage(url)} className={`w-20 h-20 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all ${activeImage === url ? 'border-green-800 scale-95' : 'border-stone-100'}`}>
-                  <img src={url} className="w-full h-full object-cover" alt={`Preview ${i}`} />
-                </button>
-              ))}
+              {product.media_urls.map((url: string, i: number) => {
+                const isVideo = getMediaType(url) === 'video';
+
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImage(url)}
+                    className={`w-20 h-20 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all relative group ${activeImage === url ? 'border-green-800 scale-95' : 'border-stone-100'
+                      }`}
+                  >
+                    {isVideo ? (
+                      <>
+                        <video src={url} className="w-full h-full object-cover opacity-60" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                          <div className="w-8 h-8 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center text-white">
+                            <svg fill="currentColor" viewBox="0 0 24 24" className="w-4 h-4 ml-0.5">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <img src={url} className="w-full h-full object-cover" alt={`Preview ${i}`} />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
